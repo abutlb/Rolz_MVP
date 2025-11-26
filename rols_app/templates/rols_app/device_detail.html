@@ -1,0 +1,129 @@
+{% extends 'rols_app/base.html' %}
+
+{% block title %}تفاصيل الجهاز{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center mb-6">
+        <a href="{% url 'device_list' %}" class="text-blue-600 hover:text-blue-800 ml-2">
+            <i class="fas fa-arrow-right"></i> العودة للقائمة
+        </a>
+        <h1 class="text-2xl font-bold">تفاصيل الجهاز</h1>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">معلومات الجهاز</h2>
+                    <div class="space-y-3">
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">الرقم التسلسلي:</span>
+                            <span>{{ device.serial_number }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">نوع الجهاز:</span>
+                            <span>{{ device.get_device_type_display }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">الموديل:</span>
+                            <span>{{ device.model }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h2 class="text-lg font-semibold mb-4">معلومات التخصيص</h2>
+                    <div class="space-y-3">
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">مخصص لـ:</span>
+                            <span>{{ device.assigned_to.username|default:"غير مخصص" }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">تاريخ التخصيص:</span>
+                            <span>{{ device.date_assigned|date:"Y/m/d"|default:"-" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if device.notes %}
+            <div class="mt-6">
+                <h2 class="text-lg font-semibold mb-2">ملاحظات</h2>
+                <p class="p-3 bg-gray-50 rounded">{{ device.notes|linebreaks }}</p>
+            </div>
+            {% endif %}
+            
+            {% if user.is_staff %}
+            <div class="mt-6 flex">
+                <a href="{% url 'admin:rols_app_device_change' device.id %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                    <i class="fas fa-edit ml-1"></i> تعديل الجهاز
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- قائمة التذاكر المرتبطة بالجهاز -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">التذاكر المرتبطة بالجهاز</h2>
+                <a href="{% url 'create_ticket' %}" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                    <i class="fas fa-plus ml-1"></i> تذكرة جديدة
+                </a>
+            </div>
+            
+            {% if tickets %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العنوان</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الأولوية</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ الإنشاء</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for ticket in tickets %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">{{ ticket.title }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs rounded-full 
+                                            {% if ticket.status == 'NEW' %}bg-yellow-100 text-yellow-800
+                                            {% elif ticket.status == 'IN_PROGRESS' %}bg-blue-100 text-blue-800
+                                            {% elif ticket.status == 'PENDING' %}bg-purple-100 text-purple-800
+                                            {% elif ticket.status == 'RESOLVED' %}bg-green-100 text-green-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ ticket.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 text-xs rounded-full 
+                                            {% if ticket.priority == 'LOW' %}bg-green-100 text-green-800
+                                            {% elif ticket.priority == 'MEDIUM' %}bg-blue-100 text-blue-800
+                                            {% elif ticket.priority == 'HIGH' %}bg-orange-100 text-orange-800
+                                            {% elif ticket.priority == 'URGENT' %}bg-red-100 text-red-800{% endif %}">
+                                            {{ ticket.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ ticket.created_at|date:"Y/m/d" }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <a href="{% url 'ticket_detail' ticket.id %}" class="text-blue-600 hover:text-blue-900">
+                                            <i class="fas fa-eye ml-1"></i> عرض
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-center py-4">لا توجد تذاكر مرتبطة بهذا الجهاز.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

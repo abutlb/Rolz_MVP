@@ -1,0 +1,171 @@
+{% extends 'rols_app/base.html' %}
+
+{% block title %}تفاصيل التذكرة{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center mb-6">
+        <a href="{% url 'ticket_list' %}" class="text-blue-600 hover:text-blue-800 ml-2">
+            <i class="fas fa-arrow-right"></i> العودة للقائمة
+        </a>
+        <h1 class="text-2xl font-bold">تفاصيل التذكرة</h1>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-xl font-semibold">{{ ticket.title }}</h2>
+                <div>
+                    <span class="px-3 py-1 text-sm rounded-full 
+                        {% if ticket.status == 'NEW' %}bg-yellow-100 text-yellow-800
+                        {% elif ticket.status == 'IN_PROGRESS' %}bg-blue-100 text-blue-800
+                        {% elif ticket.status == 'PENDING' %}bg-purple-100 text-purple-800
+                        {% elif ticket.status == 'RESOLVED' %}bg-green-100 text-green-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                    <span class="px-3 py-1 text-sm rounded-full mr-2
+                        {% if ticket.priority == 'LOW' %}bg-green-100 text-green-800
+                        {% elif ticket.priority == 'MEDIUM' %}bg-blue-100 text-blue-800
+                        {% elif ticket.priority == 'HIGH' %}bg-orange-100 text-orange-800
+                        {% elif ticket.priority == 'URGENT' %}bg-red-100 text-red-800{% endif %}">
+                        {{ ticket.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-2">معلومات التذكرة</h3>
+                    <div class="space-y-2">
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">مقدم الطلب:</span>
+                            <span>{{ ticket.created_by.username }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">تاريخ الإنشاء:</span>
+                            <span>{{ ticket.created_at|date:"Y/m/d H:i" }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">آخر تحديث:</span>
+                            <span>{{ ticket.updated_at|date:"Y/m/d H:i" }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium mb-2">معلومات الجهاز</h3>
+                    <div class="space-y-2">
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">نوع الجهاز:</span>
+                            <span>{{ ticket.device.get_device_type_display }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">الموديل:</span>
+                            <span>{{ ticket.device.model }}</span>
+                        </div>
+                        <div class="flex">
+                            <span class="font-medium ml-2 w-32">الرقم التسلسلي:</span>
+                            <span>{{ ticket.device.serial_number }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-2">وصف المشكلة</h3>
+                <div class="p-4 bg-gray-50 rounded">
+                    {{ ticket.description|linebreaks }}
+                </div>
+            </div>
+            
+            {% if ticket.resolution %}
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-2">الحل</h3>
+                <div class="p-4 bg-green-50 rounded">
+                    {{ ticket.resolution|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if user.is_staff %}
+            <div class="border-t pt-6">
+                <h3 class="text-lg font-medium mb-4">تحديث حالة التذكرة</h3>
+                <form method="post" action="{% url 'update_ticket_status' ticket.id %}">
+                    {% csrf_token %}
+                    <div class="flex flex-wrap gap-4">
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">الحالة</label>
+                            <select name="status" id="status" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+                                {% for key, value in ticket.STATUS_CHOICES %}
+                                    <option value="{{ key }}" {% if ticket.status == key %}selected{% endif %}>{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="self-end">
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                                تحديث الحالة
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- التعليقات -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold mb-4">التعليقات والمتابعة</h2>
+            
+            <div class="space-y-4 mb-6">
+                {% if comments %}
+                    {% for comment in comments %}
+                        <div class="p-4 {% if comment.user == ticket.created_by %}bg-blue-50{% else %}bg-gray-50{% endif %} rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="font-medium">{{ comment.user.username }}</div>
+                                <div class="text-sm text-gray-500">{{ comment.created_at|date:"Y/m/d H:i" }}</div>
+                            </div>
+                            <div>{{ comment.comment|linebreaks }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-gray-500 text-center py-4">لا توجد تعليقات حتى الآن.</p>
+                {% endif %}
+            </div>
+            
+            <!-- نموذج إضافة تعليق -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ comment_form.comment.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">إضافة تعليق</label>
+                    {{ comment_form.comment }}
+                    {% if comment_form.comment.errors %}
+                        <p class="text-red-600 text-xs mt-1">{{ comment_form.comment.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        <i class="fas fa-comment ml-1"></i> إضافة تعليق
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // تهيئة حقول النموذج بتنسيق Tailwind CSS
+    document.addEventListener('DOMContentLoaded', function() {
+        const textareaClasses = 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50';
+        
+        // تطبيق الأنماط على حقول التعليق
+        document.querySelectorAll('textarea').forEach(textarea => {
+            textarea.className = textareaClasses;
+        });
+    });
+</script>
+{% endblock %}

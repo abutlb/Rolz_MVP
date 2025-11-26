@@ -1,0 +1,67 @@
+{% extends 'rols_app/base.html' %}
+
+{% block title %}قائمة الأجهزة{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">قائمة الأجهزة</h1>
+        {% if user.is_staff %}
+        <a href="{% url 'create_device' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <i class="fas fa-plus ml-1"></i> إضافة جهاز جديد
+        </a>
+        {% endif %}
+    </div>
+    
+    {% if devices %}
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الرقم التسلسلي</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">النوع</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الموديل</th>
+                        {% if user.is_staff %}
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">المستخدم</th>
+                        {% endif %}
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ التخصيص</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for device in devices %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">{{ device.serial_number }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ device.get_device_type_display }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">{{ device.model }}</td>
+                            {% if user.is_staff %}
+                            <td class="px-6 py-4 whitespace-nowrap">{{ device.assigned_to.username|default:"غير مخصص" }}</td>
+                            {% endif %}
+                            <td class="px-6 py-4 whitespace-nowrap">{{ device.date_assigned|date:"Y/m/d"|default:"-" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <a href="{% url 'device_detail' device.id %}" class="text-blue-600 hover:text-blue-900">
+                                    <i class="fas fa-eye ml-1"></i> عرض
+                                </a>
+                                {% if user.is_staff %}
+                                <a href="{% url 'admin:rols_app_device_change' device.id %}" class="text-yellow-600 hover:text-yellow-900 mr-3">
+                                    <i class="fas fa-edit ml-1"></i> تعديل
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow p-6 text-center">
+            <p class="text-gray-500">لا توجد أجهزة متاحة حالياً.</p>
+            {% if user.is_staff %}
+            <a href="{% url 'create_device' %}" class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                <i class="fas fa-plus ml-1"></i> إضافة جهاز جديد
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
